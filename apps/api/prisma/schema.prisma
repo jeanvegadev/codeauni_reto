@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum EquipmentType {
+  TRUCK
+  EXCAVATOR
+  DRILL
+}
+
+model Equipment {
+  id                   String        @id @default(cuid())
+  code                 String        @unique
+  type                 EquipmentType
+  currentHours         Float         @default(0)
+  lastMaintenanceHours Float         @default(0)
+  lastMaintenanceAt    DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  maintenances         Maintenance[]
+
+  @@index([type])
+  @@index([code])
+}
+
+model Maintenance {
+  id             String    @id @default(cuid())
+  equipmentId    String
+  equipment      Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  hoursAtService Float
+  notes          String?
+  performedAt    DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+
+  @@index([equipmentId, performedAt])
+}

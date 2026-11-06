@@ -1,0 +1,19 @@
+{
+  "name": "mining-equipment-registry",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Registro de equipos mineros con frontend React y backend Next.js desplegados en Vercel.",
+  "scripts": {
+    "dev": "./scripts/dev.sh",
+    "install:all": "npm ci --prefix apps/api && npm ci --prefix apps/web",
+    "build": "npm --prefix apps/api run build && npm --prefix apps/web run build",
+    "typecheck": "npm --prefix apps/api run typecheck && npm --prefix apps/web run typecheck",
+    "test": "npm --prefix apps/api run test && npm --prefix apps/web run test",
+    "test:integration": "npm --prefix apps/api run test:integration",
+    "db:migrate:deploy": "npm --prefix apps/api run db:migrate:deploy",
+    "deploy": "./deploy.sh"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
