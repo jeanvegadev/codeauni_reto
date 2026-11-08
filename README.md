@@ -175,19 +175,6 @@ npm run dev
 
 También puedes ejecutar `make dev`.
 
-Para probar los tests de integración necesitas una base separada:
-
-```bash
-createdb mining_test
-
-DATABASE_URL="postgresql://mining:mining@localhost:5432/mining_test?schema=public" \
-DIRECT_URL="postgresql://mining:mining@localhost:5432/mining_test?schema=public" \
-npm run db:migrate:deploy
-
-TEST_DATABASE_URL="postgresql://mining:mining@localhost:5432/mining_test?schema=public" \
-npm run test:integration
-```
-
 > Los tests de integración rechazan ejecutarse sin `TEST_DATABASE_URL`, para evitar
 > limpiar accidentalmente una base de producción.
 
@@ -221,8 +208,6 @@ Parte de `.env.example`; el archivo real está en `.gitignore` y **nunca** debe 
 | `WEB_PROJECT_NAME` | Nombre del proyecto frontend (por defecto `mining-equipment-web`) |
 | `API_PUBLIC_URL` | Opcional; si se omite se descubre o se usa el dominio por defecto |
 | `WEB_PUBLIC_URL` | Opcional; si se omite se descubre o se usa el dominio por defecto |
-| `RUN_INTEGRATION_TESTS` | Opcional; `1` para ejecutar integración antes de desplegar |
-| `TEST_DATABASE_URL` | Base de pruebas para integración |
 
 ## Despliegue con un comando
 
