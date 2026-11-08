@@ -138,6 +138,17 @@ ensure_project() {
   ok "Proyecto Vercel creado: $project"
 }
 
+configure_project() {
+  local project="$1"
+  local framework="$2"
+
+  if ! vercel_cli project update "$project" --framework "$framework" --yes \
+    --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN" >/dev/null; then
+    fail "No se pudo configurar el framework '$framework' para $project."
+  fi
+  ok "Framework de $project: $framework"
+}
+
 link_project() {
   local directory="$1"
   local project="$2"
@@ -480,6 +491,8 @@ step "Preparando proyectos de Vercel"
 
 ensure_project "$API_PROJECT_NAME"
 ensure_project "$WEB_PROJECT_NAME"
+configure_project "$API_PROJECT_NAME" nextjs
+configure_project "$WEB_PROJECT_NAME" vite
 link_project "$API_DIR" "$API_PROJECT_NAME"
 link_project "$WEB_DIR" "$WEB_PROJECT_NAME"
 ok "Directorios vinculados a sus proyectos de Vercel"
