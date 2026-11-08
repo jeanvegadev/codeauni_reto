@@ -158,7 +158,7 @@ export function EquipmentTable(props: EquipmentTableProps) {
           <thead className="border-b border-white/10 bg-white/[0.02] text-[11px] uppercase tracking-wider text-slate-500">
             <tr>
               <th scope="col" className="px-5 py-3.5 font-medium">
-                Equipo Minero
+                Equipo
               </th>
               <th scope="col" className="px-5 py-3.5 font-medium">
                 Horómetro
