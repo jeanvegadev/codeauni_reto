@@ -93,6 +93,11 @@ load_env_file() {
   done < "$file"
 }
 
+derive_direct_url() {
+  local url="$1"
+  printf '%s' "${url/-pooler./.}"
+}
+
 strip_trailing_slash() {
   local value="$1"
   while [[ "$value" == */ ]]; do
@@ -329,7 +334,10 @@ fi
 require_var DATABASE_URL
 require_var VERCEL_TOKEN
 require_var VERCEL_SCOPE
-set_default DIRECT_URL "$DATABASE_URL"
+if [[ -z "${DIRECT_URL:-}" ]]; then
+  DIRECT_URL="$(derive_direct_url "$DATABASE_URL")"
+  ok "DIRECT_URL derivada de DATABASE_URL (sin -pooler)"
+fi
 set_default API_PROJECT_NAME "mining-equipment-api"
 set_default WEB_PROJECT_NAME "mining-equipment-web"
 API_PUBLIC_URL="$(strip_trailing_slash "${API_PUBLIC_URL:-}")"

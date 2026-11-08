@@ -195,7 +195,7 @@ npm run test:integration
 | Variable | Obligatoria | Descripción |
 | --- | --- | --- |
 | `DATABASE_URL` | Sí | Conexión PostgreSQL para runtime (pooler en Neon) |
-| `DIRECT_URL` | Sí | Conexión directa para migraciones |
+| `DIRECT_URL` | Sí | Conexión directa para migraciones (local) |
 | `WEB_ORIGIN` | Producción | Origen(es) permitidos por CORS, separados por coma |
 
 ### Frontend (`apps/web`)
@@ -211,7 +211,7 @@ Parte de `.env.example`; el archivo real está en `.gitignore` y **nunca** debe 
 | Variable | Descripción |
 | --- | --- |
 | `DATABASE_URL` | Cadena con pooler de Neon para runtime |
-| `DIRECT_URL` | Cadena directa de Neon para migraciones |
+| `DIRECT_URL` | Opcional; si se omite se deriva de `DATABASE_URL` quitando `-pooler` |
 | `VERCEL_TOKEN` | Token personal de Vercel |
 | `VERCEL_SCOPE` | Usuario o equipo de Vercel |
 | `API_PROJECT_NAME` | Nombre del proyecto backend (por defecto `mining-equipment-api`) |
@@ -225,16 +225,17 @@ Parte de `.env.example`; el archivo real está en `.gitignore` y **nunca** debe 
 
 ### Preparación (una sola vez)
 
-1. Crea un proyecto en [Neon](https://neon.tech) y copia:
-   - la cadena **pooled** para `DATABASE_URL`;
-   - la cadena **direct** para `DIRECT_URL`.
+1. Crea un proyecto en [Neon](https://neon.tech) y copia su cadena **pooled**.
 2. Crea un token en <https://vercel.com/account/tokens>.
 3. Crea el archivo de entorno:
 
 ```bash
 cp .env.example .env.deploy
-# Completa DATABASE_URL, DIRECT_URL, VERCEL_TOKEN y VERCEL_SCOPE.
+# Completa DATABASE_URL, VERCEL_TOKEN y VERCEL_SCOPE.
 ```
+
+`DIRECT_URL` es opcional: si la dejas vacía, `deploy.sh` la obtiene quitando
+`-pooler` del host de `DATABASE_URL`, como recomienda Neon.
 
 Los proyectos de Vercel se crean automáticamente si no existen. Los nombres deben ser
 únicos dentro de tu cuenta/equipo. Si usas dominios personalizados, define
@@ -280,8 +281,8 @@ migraciones se aplican antes de publicar; si fallan, no se publica ningún servi
   PostgreSQL y build en cada push/PR.
 - `.github/workflows/deploy.yml`: despliegue manual (`workflow_dispatch`). Configura los
   mismos secrets en **Settings → Secrets and variables → Actions**:
-  `DATABASE_URL`, `DIRECT_URL`, `VERCEL_TOKEN`, `VERCEL_SCOPE`, `API_PROJECT_NAME`,
-  `WEB_PROJECT_NAME`, `API_PUBLIC_URL`, `WEB_PUBLIC_URL`.
+  `DATABASE_URL`, `VERCEL_TOKEN`, `VERCEL_SCOPE`, `API_PROJECT_NAME`,
+  `WEB_PROJECT_NAME`, `API_PUBLIC_URL`, `WEB_PUBLIC_URL`. `DIRECT_URL` es opcional.
 
 ## Pruebas
 
