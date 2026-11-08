@@ -9,9 +9,12 @@ independientes, cada uno con su propia URL pública en Vercel, y todo se publica
 
 | Servicio | URL |
 | --- | --- |
-| Frontend | _Se completa después del despliegue_ |
-| Backend | _Se completa después del despliegue_ |
-| Health check | `<URL_BACKEND>/health` |
+| Frontend | https://mining-equipment-web-two.vercel.app |
+| Backend | https://mining-equipment-api.vercel.app |
+| Health check | https://mining-equipment-api.vercel.app/health |
+
+> Vercel asigna un sufijo (`-two`) cuando el dominio por defecto ya está ocupado.
+> El script detecta la URL real después de publicar y actualiza CORS automáticamente.
 
 ## Stack
 
@@ -239,7 +242,8 @@ cp .env.example .env.deploy
 
 Los proyectos de Vercel se crean automáticamente si no existen. Los nombres deben ser
 únicos dentro de tu cuenta/equipo. Si usas dominios personalizados, define
-`API_PUBLIC_URL` y `WEB_PUBLIC_URL`.
+`API_PUBLIC_URL` y `WEB_PUBLIC_URL`. Si Vercel asigna un dominio con sufijo, el script
+usa la URL real del despliegue, sincroniza `VITE_API_URL` y `WEB_ORIGIN`, y reaplica CORS.
 
 ### Ejecutar
 

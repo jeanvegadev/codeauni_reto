@@ -294,7 +294,7 @@ wait_for_web() {
 
   for ((attempt = 1; attempt <= attempts; attempt++)); do
     if curl -fsS --max-time 10 "$url" -o "$TMP_DIR/web.html" 2>/dev/null; then
-      if grep -q 'id="root"' "$TMP_DIR/web.html"; then
+      if grep -q 'MinerTrack' "$TMP_DIR/web.html"; then
         return 0
       fi
     fi
@@ -307,6 +307,23 @@ wait_for_web() {
 extract_deployment_url() {
   local log_file="$1"
   grep -Eo 'https://[A-Za-z0-9._-]+\.vercel\.app' "$log_file" 2>/dev/null | tail -n 1 || true
+}
+
+extract_production_url() {
+  local log_file="$1"
+  node -e '
+    const fs = require("fs");
+    const raw = fs.readFileSync(process.argv[1], "utf8");
+    const match = raw.match(/"productionUrl"\s*:\s*"([^"]+)"/);
+    if (match) process.stdout.write(match[1]);
+  ' "$log_file" 2>/dev/null || true
+}
+
+cors_allows_web() {
+  local headers
+  headers="$(curl -sS -D - -o /dev/null \
+    -H "Origin: $WEB_PUBLIC_URL" "$API_PUBLIC_URL/api/equipments" || true)"
+  grep -qi "access-control-allow-origin: *$WEB_PUBLIC_URL" <<<"$headers"
 }
 
 rollback_project() {
@@ -529,6 +546,13 @@ if ! (cd "$API_DIR" && vercel_cli deploy --prod --yes \
   fail "El despliegue del backend falló. Revisa el log anterior."
 fi
 
+API_ACTUAL_URL="$(extract_production_url "$API_DEPLOY_LOG")"
+if [[ -n "$API_ACTUAL_URL" && "$API_ACTUAL_URL" != "$API_PUBLIC_URL" ]]; then
+  warn "Vercel asignó la URL de producción $API_ACTUAL_URL al backend."
+  API_PUBLIC_URL="$API_ACTUAL_URL"
+  sync_env "$WEB_PROJECT_NAME" VITE_API_URL "$API_PUBLIC_URL" config
+fi
+
 step "Comprobando salud del backend"
 
 if ! wait_for_api_health "$API_PUBLIC_URL/health"; then
@@ -546,12 +570,11 @@ fi
 
 ok "Backend saludable: $API_PUBLIC_URL/health"
 
-CORS_HEADERS="$(curl -sS -D - -o /dev/null \
-  -H "Origin: $WEB_PUBLIC_URL" "$API_PUBLIC_URL/api/equipments" || true)"
-if ! grep -qi "access-control-allow-origin: *$WEB_PUBLIC_URL" <<<"$CORS_HEADERS"; then
-  fail "El backend responde, pero CORS no permite $WEB_PUBLIC_URL. Define WEB_PUBLIC_URL correctamente y vuelve a ejecutar."
+if cors_allows_web; then
+  ok "CORS permite el origen del frontend"
+else
+  warn "CORS aún no permite $WEB_PUBLIC_URL; se ajustará tras publicar el frontend."
 fi
-ok "CORS permite el origen del frontend"
 
 # ---------------------------------------------------------------------------
 # 10. Frontend
@@ -579,7 +602,28 @@ if ! wait_for_web "$WEB_PUBLIC_URL"; then
   fi
 fi
 
+WEB_ACTUAL_URL="$(extract_production_url "$WEB_DEPLOY_LOG")"
+if [[ -n "$WEB_ACTUAL_URL" && "$WEB_ACTUAL_URL" != "$WEB_PUBLIC_URL" ]]; then
+  warn "Vercel asignó la URL de producción $WEB_ACTUAL_URL al frontend."
+  WEB_PUBLIC_URL="$WEB_ACTUAL_URL"
+  sync_env "$API_PROJECT_NAME" WEB_ORIGIN "$WEB_PUBLIC_URL" config
+
+  step "Reaplicando CORS en el backend"
+  if ! (cd "$API_DIR" && vercel_cli deploy --prod --yes \
+    --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN") >/dev/null; then
+    fail "No se pudo redesplegar el backend para actualizar CORS."
+  fi
+  if ! wait_for_api_health "$API_PUBLIC_URL/health"; then
+    fail "El backend no volvió a responder después de actualizar CORS."
+  fi
+fi
+
 ok "Frontend saludable: $WEB_PUBLIC_URL"
+
+if ! cors_allows_web; then
+  fail "El backend no permite CORS para $WEB_PUBLIC_URL."
+fi
+ok "CORS permite el origen del frontend"
 
 # ---------------------------------------------------------------------------
 # 11. Verificación final
